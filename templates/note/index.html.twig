@@ -9,8 +9,43 @@
         <h1>Note index</h1>
 
         <div>
-            <input v-model="inputText">
-            <button @click="submit">Submit</button>
+            <input v-model="noteInputText">
+            <button @click="submitNote">Submit</button>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Text</th>
+                    <th>Tags</th>
+                    <th>actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="note in notes" :key="note.id">
+                    <td>${ note.id }</td>
+                    <td v-if="note.status === 'complete'" class="text-decoration-line-through">${ note.text }</td>
+                    <td v-else>${ note.text }</td>
+                    <td>tags</td>
+                    <td>
+                        <button @click="markNoteComplete(note.id)" type="button">Mark as complete</button>
+                        <button @click="deleteNote(note.id)" type="button">Delete</button>
+                        <button type="button">Add Tag</button>
+                    </td>
+                </tr>
+
+                <tr v-if="notes.length == 0">
+                    <td colspan="3">no records found</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h1>Tag index</h1>
+
+        <div>
+            <input v-model="tagInputText">
+            <button @click="submitTag">Submit</button>
         </div>
 
         <table class="table">
@@ -22,23 +57,15 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="note in notes" :key="note.id">
-                    <td>${ note.id }</td>
-                    <td>${ note.text }</td>
+                <tr v-for="tag in tags" :key="tag.id">
+                    <td>${ tag.id }</td>
+                    <td>${ tag.text }</td>
                     <td>
-                        <button type="button">
-                            Mark as complete
-                        </button>
-                        <button type="button">
-                            Delete
-                        </button>
-                        <button type="button">
-                            Add Tag
-                        </button>
+                        <button @click="deleteTag(tag.id)" type="button">Delete</button>
                     </td>
                 </tr>
 
-                <tr v-if="notes.length == 0">
+                <tr v-if="tags.length == 0">
                     <td colspan="3">no records found</td>
                 </tr>
             </tbody>
@@ -54,23 +81,33 @@ const app = createApp({
     data() {
         return {
             notes: [],
-            inputText: 'Potato'
+            tags: [],
+            noteInputText: 'Potato',
+            tagInputText: 'Tomato'
         }
     },
     created() {
-        this.fetch()
+        this.fetchNotes()
+        this.fetchTags()
     },
     methods: {
-        fetch() {
+        fetchNotes() {
             fetch('/api/notes')
                 .then(res => res.json())
                 .then(notes => {
                     this.notes = notes
                 })
         },
-        submit() {
+        fetchTags() {
+            fetch('/api/tags')
+                .then(res => res.json())
+                .then(tags => {
+                    this.tags = tags
+                })
+        },
+        submitNote() {
             const body = {
-                text: this.inputText,
+                text: this.noteInputText,
                 status: '',
                 userId: 1
             }
@@ -85,7 +122,76 @@ const app = createApp({
             })
                 .then(res => res.json())
                 .then(() => {
-                    this.fetch()
+                    this.fetchNotes()
+                })
+                .catch(err => console.log(err))
+        },
+        submitTag() {
+            const body = {
+                text: this.tagInputText,
+                status: '',
+                userId: 1
+            }
+            const headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            }
+            fetch('/api/tags', {
+                method: "POST",
+                headers,
+                body: JSON.stringify(body)
+            })
+                .then(res => res.json())
+                .then(() => {
+                    this.fetchTags()
+                })
+                .catch(err => console.log(err))
+        },
+        markNoteComplete(noteId) {
+            const body = {
+                status: 'complete',
+            }
+            const headers = {
+                "Accept": "application/json",
+                // "Content-Type": "application/json"
+                "Content-Type": "application/merge-patch+json"
+            }
+            fetch('/api/notes/'+noteId, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify(body)
+            })
+                .then(res => res.json())
+                .then(() => {
+                    this.fetchNotes()
+                })
+                .catch(err => console.log(err))
+        },
+        deleteNote(noteId) {
+            if(!confirm("Are you sure you want to delete?")) return
+            const headers = {
+                "Accept": "*/*",
+            }
+            fetch('/api/notes/'+noteId, {
+                method: "DELETE",
+                headers
+            })
+                .then(() => {
+                    this.fetchNotes()
+                })
+                .catch(err => console.log(err))
+        },
+        deleteTag(tagId) {
+            if(!confirm("Are you sure you want to delete?")) return
+            const headers = {
+                "Accept": "*/*",
+            }
+            fetch('/api/tags/'+tagId, {
+                method: "DELETE",
+                headers
+            })
+                .then(() => {
+                    this.fetchTags()
                 })
                 .catch(err => console.log(err))
         }
