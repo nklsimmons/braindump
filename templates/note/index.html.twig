@@ -8,6 +8,11 @@
 
         <h1>Note index</h1>
 
+        <div>
+            <input v-model="inputText">
+            <button @click="submit">Submit</button>
+        </div>
+
         <table class="table">
             <thead>
                 <tr>
@@ -21,8 +26,15 @@
                     <td>${ note.id }</td>
                     <td>${ note.text }</td>
                     <td>
-{#                        <a href="{{ path('app_note_show', {'id': note.id}) }}">show</a>#}
-{#                        <a href="{{ path('app_note_edit', {'id': note.id}) }}">edit</a>#}
+                        <button type="button">
+                            Mark as complete
+                        </button>
+                        <button type="button">
+                            Delete
+                        </button>
+                        <button type="button">
+                            Add Tag
+                        </button>
                     </td>
                 </tr>
 
@@ -31,11 +43,6 @@
                 </tr>
             </tbody>
         </table>
-
-        <div>
-            <input v-model="inputText">
-            <button @click="submit">Submit</button>
-        </div>
 
     </div>
 
@@ -63,7 +70,9 @@ const app = createApp({
         },
         submit() {
             const body = {
-                text: this.inputText
+                text: this.inputText,
+                status: '',
+                userId: 1
             }
             const headers = {
                 "Accept": "application/json",
