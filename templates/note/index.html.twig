@@ -19,7 +19,7 @@
                     <th>Id</th>
                     <th>Text</th>
                     <th>Tags</th>
-                    <th>actions</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,11 +27,18 @@
                     <td>${ note.id }</td>
                     <td v-if="note.status === 'complete'" class="text-decoration-line-through">${ note.text }</td>
                     <td v-else>${ note.text }</td>
-                    <td>tags</td>
                     <td>
-                        <button @click="markNoteComplete(note.id)" type="button">Mark as complete</button>
+                        <button v-for="tag in note.tags">${ tag.text }</button>
+                    </td>
+                    <td>
+                        <button v-if="note.status !== 'complete'" @click="markNoteComplete(note.id, true)" type="button">Mark as complete</button>
+                        <button v-else @click="markNoteComplete(note.id, false)" type="button">Mark as incomplete</button>
                         <button @click="deleteNote(note.id)" type="button">Delete</button>
-                        <button type="button">Add Tag</button>
+                        <button type="button" data-bs-toggle="modal" data-bs-target="#tagsModal"
+                            @click="setTagsModalNote(note.id)">
+                            Add Tag
+                        </button>
+                        <button type="button">Add Reminder</button>
                     </td>
                 </tr>
 
@@ -53,7 +60,7 @@
                 <tr>
                     <th>Id</th>
                     <th>Text</th>
-                    <th>actions</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -71,6 +78,29 @@
             </tbody>
         </table>
 
+        <div class="modal fade" id="tagsModal" tabindex="-1" aria-labelledby="tagsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="tagsModalLabel" v-if="tagsModalActiveNote !== null">Add Tag to ${ tagsModalActiveNote.text }</h1>
+                        <h1 class="modal-title fs-5" id="tagsModalLabel" v-else>Add Tag</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p v-for="tag in tagsModalTags">
+                            <button @click="addNoteTag(tagsModalActiveNote.id, tag.text)">${ tag.text }</button>
+                        </p>
+                        <input type="text" v-model="tagsModalActiveInput">
+                        <button type="button" @click="addNoteTag(tagsModalActiveNote.id, tagsModalActiveInput)">Submit</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" data-bs-dismiss="modal">Close</button>
+                        <button type="button">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -83,7 +113,12 @@ const app = createApp({
             notes: [],
             tags: [],
             noteInputText: 'Potato',
-            tagInputText: 'Tomato'
+            tagInputText: 'Tomato',
+
+            // Tags Modal Content
+            tagsModalTags: [],
+            tagsModalActiveNote: null,
+            tagsModalActiveInput: "",
         }
     },
     created() {
@@ -103,6 +138,7 @@ const app = createApp({
                 .then(res => res.json())
                 .then(tags => {
                     this.tags = tags
+                    this.tagsModalTags = tags
                 })
         },
         submitNote() {
@@ -141,19 +177,17 @@ const app = createApp({
                 headers,
                 body: JSON.stringify(body)
             })
-                .then(res => res.json())
                 .then(() => {
                     this.fetchTags()
                 })
                 .catch(err => console.log(err))
         },
-        markNoteComplete(noteId) {
+        markNoteComplete(noteId, completeStatus) {
             const body = {
-                status: 'complete',
+                status: completeStatus ? 'complete' : '',
             }
             const headers = {
                 "Accept": "application/json",
-                // "Content-Type": "application/json"
                 "Content-Type": "application/merge-patch+json"
             }
             fetch('/api/notes/'+noteId, {
@@ -161,9 +195,27 @@ const app = createApp({
                 headers,
                 body: JSON.stringify(body)
             })
-                .then(res => res.json())
                 .then(() => {
                     this.fetchNotes()
+                })
+                .catch(err => console.log(err))
+        },
+        addNoteTag(noteId, tag) {
+            const body = {
+                noteId, tag
+            }
+            const headers = {
+                "Accept": "application/json",
+                "Content-Type": "multipart/form-data"
+            }
+            fetch('/api/notes/'+noteId+'/tags', {
+                method: "POST",
+                headers,
+                body: JSON.stringify(body)
+            })
+                .then(() => {
+                    this.fetchNotes()
+                    this.fetchTags()
                 })
                 .catch(err => console.log(err))
         },
@@ -178,6 +230,7 @@ const app = createApp({
             })
                 .then(() => {
                     this.fetchNotes()
+                    this.fetchTags()
                 })
                 .catch(err => console.log(err))
         },
@@ -191,9 +244,18 @@ const app = createApp({
                 headers
             })
                 .then(() => {
+                    this.fetchNotes()
                     this.fetchTags()
                 })
                 .catch(err => console.log(err))
+        },
+        setTagsModalNote(noteId) {
+            for(const note of this.notes) {
+                if(note.id === noteId) {
+                    this.tagsModalActiveNote = note
+                    break
+                }
+            }
         }
     },
     delimiters: ['${', '}']

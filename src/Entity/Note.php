@@ -8,24 +8,29 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: NoteRepository::class)]
-#[ApiResource]
+#[ApiResource(normalizationContext: ['groups' => ['default']])]
 class Note
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('default')]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: false, options: ['default' => ''])]
+    #[Groups('default')]
     private string $text;
 
     #[ORM\ManyToOne(inversedBy: 'notes')]
     #[ORM\JoinColumn]
+    #[Groups('default')]
     private ?User $user = null;
 
     #[ORM\Column(length: 100, nullable: false, options: ['default' => ''])]
+    #[Groups('default')]
     private ?string $status = null;
 
     #[ORM\Column(nullable: true)]
@@ -38,6 +43,7 @@ class Note
      * @var Collection<int, Tag>
      */
     #[ORM\ManyToMany(targetEntity: Tag::class, mappedBy: 'notes')]
+    #[Groups('default')]
     private Collection $tags;
 
     public function __construct()
