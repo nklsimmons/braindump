@@ -4,81 +4,136 @@
 
 {% block body %}
 
-    <div id="app">
-
-        <h1>Note index</h1>
+    <div id="app" class="container">
 
         <div>
-            <input v-model="noteInputText">
-            <button @click="submitNote">Submit</button>
+            <h1>Tag index</h1>
+
+            <div>
+                <input v-model="tagInputText">
+                <button @click="submitTag">Submit</button>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Text</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="tag in tags" :key="tag.id">
+                        <td>${ tag.text }</td>
+                        <td>
+                            <button @click="deleteTag(tag.id)" type="button">Delete</button>
+                        </td>
+                    </tr>
+
+                    <tr v-if="tags.length == 0">
+                        <td colspan="3">no records found</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Id</th>
-                    <th>Text</th>
-                    <th>Tags</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="note in notes" :key="note.id">
-                    <td>${ note.id }</td>
-                    <td v-if="note.status === 'complete'" class="text-decoration-line-through">${ note.text }</td>
-                    <td v-else>${ note.text }</td>
-                    <td>
-                        <button v-for="tag in note.tags">${ tag.text }</button>
-                    </td>
-                    <td>
-                        <button v-if="note.status !== 'complete'" @click="markNoteComplete(note.id, true)" type="button">Mark as complete</button>
-                        <button v-else @click="markNoteComplete(note.id, false)" type="button">Mark as incomplete</button>
-                        <button @click="deleteNote(note.id)" type="button">Delete</button>
-                        <button type="button" data-bs-toggle="modal" data-bs-target="#tagsModal"
-                            @click="setTagsModalNote(note.id)">
-                            Add Tag
-                        </button>
-                        <button type="button">Add Reminder</button>
-                    </td>
-                </tr>
-
-                <tr v-if="notes.length == 0">
-                    <td colspan="3">no records found</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h1>Tag index</h1>
 
         <div>
-            <input v-model="tagInputText">
-            <button @click="submitTag">Submit</button>
+            <h1>Note index</h1>
+
+            <div class="row justify-content-between">
+                <div class="col">
+                    <label for="noteFilterField">Filter: </label>
+                    <input id="noteFilterField" v-model="noteFilterText">
+                </div>
+                <div class="col text-end">
+                    <label for="noteInputField">New: </label>
+                    <textarea id="noteInputField" v-model="noteInputText"></textarea>
+                    <button @click="submitNote">Submit</button>
+                </div>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th @click="sortNotes('text')">Text</th>
+                        <th @click="sortNotes('createdAt')">Created</th>
+                        <th @click="sortNotes('updatedAt')">Updated</th>
+                        <th>Tags</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="note in displayedNotes" :key="note.id">
+                        <td v-if="note.status === 'complete'" class="text-decoration-line-through">${ note.text }</td>
+                        <td v-else>${ note.text }</td>
+                        <td>${ note.createdAt }</td>
+                        <td>${ note.updatedAt }</td>
+                        <td>
+                            <button v-for="tag in note.tags">${ tag.text }</button>
+                        </td>
+                        <td>
+                            <button v-if="note.status !== 'complete'" @click="markNoteComplete(note.id, true)" type="button">Mark as complete</button>
+                            <button v-else @click="markNoteComplete(note.id, false)" type="button">Mark as incomplete</button>
+                            <button @click="deleteNote(note.id)" type="button">
+                                Delete
+                            </button>
+                            <button type="button" data-bs-toggle="modal" data-bs-target="#editModal"
+                                @click="setEditModalNote(note.id)">
+                                Edit Note
+                            </button>
+                            <button type="button" data-bs-toggle="modal" data-bs-target="#tagsModal"
+                                @click="setTagsModalNote(note.id)">
+                                Add Tag
+                            </button>
+                            <button type="button" data-bs-toggle="modal" data-bs-target="#remindersModal">Add Reminder</button>
+                        </td>
+                    </tr>
+
+                    <tr v-if="notes.length == 0">
+                        <td colspan="3">no records found</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Id</th>
-                    <th>Text</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="tag in tags" :key="tag.id">
-                    <td>${ tag.id }</td>
-                    <td>${ tag.text }</td>
-                    <td>
-                        <button @click="deleteTag(tag.id)" type="button">Delete</button>
-                    </td>
-                </tr>
-
-                <tr v-if="tags.length == 0">
-                    <td colspan="3">no records found</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    </div>
+                    <div class="modal-body">
+                        <textarea v-if="editModalActiveNote" v-model="editModalNoteText"></textarea>
+                        <button type="button" data-bs-dismiss="modal" @click="submitModalEdit()">Submit</button>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="modal fade" id="tagsModal" tabindex="-1" aria-labelledby="tagsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="tagsModalLabel" v-if="tagsModalActiveNote !== null">Add Tag to ${ tagsModalActiveNote.text }</h1>
+                        <h1 class="modal-title fs-5" id="tagsModalLabel" v-else>Add Tag</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p v-for="tag in tagsModalTags">
+                            <button @click="addNoteTag(tagsModalActiveNote.id, tag.text)">${ tag.text }</button>
+                        </p>
+                        <input type="text" v-model="tagsModalActiveInput">
+                        <button type="button" @click="addNoteTag(tagsModalActiveNote.id, tagsModalActiveInput)">Submit</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" data-bs-dismiss="modal">Close</button>
+                        <button type="button">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="remindersModal" tabindex="-1" aria-labelledby="remindersModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -110,10 +165,20 @@ const { createApp } = Vue
 const app = createApp({
     data() {
         return {
+            // Notes interface
             notes: [],
+            noteInputText: '',
+            noteFilterText: '',
+            noteSortingColumn: '',
+            noteSortAsc: true,
+
+            // Edit note interface
+            editModalActiveNote: null,
+            editModalNoteText: '',
+
+            // Tags interface
             tags: [],
-            noteInputText: 'Potato',
-            tagInputText: 'Tomato',
+            tagInputText: '',
 
             // Tags Modal Content
             tagsModalTags: [],
@@ -121,13 +186,28 @@ const app = createApp({
             tagsModalActiveInput: "",
         }
     },
+    computed: {
+        displayedNotes() {
+            if(this.noteFilterText === '')
+                return this.notes
+
+            let displayed = []
+
+            for(const note of this.notes) {
+                if(note.text.toLowerCase().includes(this.noteFilterText.toLowerCase()))
+                    displayed.push(note)
+            }
+
+            return displayed
+        },
+    },
     created() {
         this.fetchNotes()
         this.fetchTags()
     },
     methods: {
         fetchNotes() {
-            fetch('/api/notes')
+            fetch('/api/notes?pagination=false')
                 .then(res => res.json())
                 .then(notes => {
                     this.notes = notes
@@ -141,7 +221,29 @@ const app = createApp({
                     this.tagsModalTags = tags
                 })
         },
+        sortNotes(sortingColumn) {
+            this.noteSortingColumn = sortingColumn
+            if(this.noteSortingColumn === sortingColumn)
+                this.noteSortAsc = !this.noteSortAsc
+
+            this.notes.sort((itemA, itemB) => {
+                let sortKeyA = itemA[sortingColumn] ?? ''
+                let sortKeyB = itemB[sortingColumn] ?? ''
+
+                if(typeof sortKeyA === 'string')
+                    sortKeyA.toLowerCase()
+                if(typeof sortKeyB === 'string')
+                    sortKeyB.toLowerCase()
+
+                if(sortKeyA < sortKeyB)
+                    return this.noteSortAsc ? -1 : 1
+                if(sortKeyA > sortKeyB)
+                    return this.noteSortAsc ? 1 : -1
+                return 0
+            })
+        },
         submitNote() {
+            if(!this.noteInputText) return
             const body = {
                 text: this.noteInputText,
                 status: '',
@@ -159,10 +261,12 @@ const app = createApp({
                 .then(res => res.json())
                 .then(() => {
                     this.fetchNotes()
+                    this.noteInputText = ''
                 })
                 .catch(err => console.log(err))
         },
         submitTag() {
+            if(!this.tagInputText) return
             const body = {
                 text: this.tagInputText,
                 status: '',
@@ -179,6 +283,7 @@ const app = createApp({
             })
                 .then(() => {
                     this.fetchTags()
+                    this.tagInputText = ''
                 })
                 .catch(err => console.log(err))
         },
@@ -186,18 +291,32 @@ const app = createApp({
             const body = {
                 status: completeStatus ? 'complete' : '',
             }
+            this.patchNote(noteId, body)
+                .then(() => {
+                    this.fetchNotes()
+                })
+                .catch(err => console.log(err))
+        },
+        updateNoteText(noteId, newText) {
+            const body = {
+                text: newText
+            }
+            this.patchNote(noteId, body)
+                .then(() => {
+                    this.fetchNotes()
+                })
+                .catch(err => console.log(err))
+        },
+        patchNote : async (noteId, body) => {
             const headers = {
                 "Accept": "application/json",
                 "Content-Type": "application/merge-patch+json"
             }
-            fetch('/api/notes/'+noteId, {
+            return fetch('/api/notes/'+noteId, {
                 method: "PATCH",
                 headers,
                 body: JSON.stringify(body)
             })
-                .then(() => {
-                    this.fetchNotes()
-                })
                 .catch(err => console.log(err))
         },
         addNoteTag(noteId, tag) {
@@ -256,7 +375,19 @@ const app = createApp({
                     break
                 }
             }
-        }
+        },
+        setEditModalNote(noteId) {
+            for(const note of this.notes) {
+                if(note.id === noteId) {
+                    this.editModalActiveNote = note
+                    this.editModalNoteText = note.text
+                    break
+                }
+            }
+        },
+        submitModalEdit() {
+            this.updateNoteText(this.editModalActiveNote.id, this.editModalNoteText)
+        },
     },
     delimiters: ['${', '}']
 })
