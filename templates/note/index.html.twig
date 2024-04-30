@@ -41,8 +41,12 @@
 
             <div class="row justify-content-between">
                 <div class="col">
-                    <label for="noteFilterField">Filter: </label>
+                    <label for="noteFilterField">Filter Text: </label>
                     <input id="noteFilterField" v-model="noteFilterText">
+                </div>
+                <div class="col">
+                    <label for="noteFilterTagsField">Filter Tags: </label>
+                    <input id="noteFilterTagsField" v-model="noteFilterTag">
                 </div>
                 <div class="col text-end">
                     <label for="noteInputField">New: </label>
@@ -169,6 +173,7 @@ const app = createApp({
             notes: [],
             noteInputText: '',
             noteFilterText: '',
+            noteFilterTag: '',
             noteSortingColumn: '',
             noteSortAsc: true,
 
@@ -188,14 +193,18 @@ const app = createApp({
     },
     computed: {
         displayedNotes() {
-            if(this.noteFilterText === '')
+            if(this.noteFilterText === '' && this.noteFilterTag === '')
                 return this.notes
 
             let displayed = []
 
             for(const note of this.notes) {
-                if(note.text.toLowerCase().includes(this.noteFilterText.toLowerCase()))
-                    displayed.push(note)
+                if(!note.text.toLowerCase().includes(this.noteFilterText.toLowerCase()))
+                    continue
+                let noteTagsCombined = note.tags.map(tag => tag.text).join(',')
+                if(!noteTagsCombined.toLowerCase().includes(this.noteFilterTag.toLowerCase()))
+                    continue
+                displayed.push(note)
             }
 
             return displayed
