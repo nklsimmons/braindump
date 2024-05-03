@@ -1,5 +1,5 @@
 import { createApp } from "vue";
-import Hello from "./vue/controllers/Hello.vue"
+import App from "./vue/App.vue"
 
 /*
  * Welcome to your app's main JavaScript file!
@@ -9,5 +9,4 @@ import Hello from "./vue/controllers/Hello.vue"
  */
 import './styles/app.css';
 
-const app = createApp(Hello).mount("#testing")
-
+const app = createApp(App).mount("#app")
