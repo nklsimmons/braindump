@@ -1,5 +1,6 @@
  <script>
-import TagsTable from './components/TagsTable.vue'
+import CreateModal from './components/modal/CreateModal.vue';
+import TagsTable from './components/TagsTable.vue';
 
 export default {
     data() {
@@ -23,12 +24,13 @@ export default {
         }
     },
     components: {
-        TagsTable
+        TagsTable,
+        CreateModal,
     },
     computed: {
         displayedNotes() {
-            if(this.noteFilterText === '' && this.noteFilterTag === '')
-                return this.notes
+            // if(this.noteFilterText === '' && this.noteFilterTag === '')
+            //     return this.notes
 
             let displayed = []
 
@@ -40,6 +42,22 @@ export default {
                     continue
                 displayed.push(note)
             }
+
+            displayed.sort((itemA, itemB) => {
+                let sortKeyA = itemA[this.noteSortingColumn] ?? ''
+                let sortKeyB = itemB[this.noteSortingColumn] ?? ''
+
+                if(typeof sortKeyA === 'string')
+                    sortKeyA.toLowerCase()
+                if(typeof sortKeyB === 'string')
+                    sortKeyB.toLowerCase()
+
+                if(sortKeyA < sortKeyB)
+                    return this.noteSortAsc ? -1 : 1
+                if(sortKeyA > sortKeyB)
+                    return this.noteSortAsc ? 1 : -1
+                return 0
+            })
 
             return displayed
         },
@@ -71,45 +89,6 @@ export default {
             this.noteSortingColumn = sortingColumn
             if(this.noteSortingColumn === sortingColumn)
                 this.noteSortAsc = !this.noteSortAsc
-
-            this.notes.sort((itemA, itemB) => {
-                let sortKeyA = itemA[sortingColumn] ?? ''
-                let sortKeyB = itemB[sortingColumn] ?? ''
-
-                if(typeof sortKeyA === 'string')
-                    sortKeyA.toLowerCase()
-                if(typeof sortKeyB === 'string')
-                    sortKeyB.toLowerCase()
-
-                if(sortKeyA < sortKeyB)
-                    return this.noteSortAsc ? -1 : 1
-                if(sortKeyA > sortKeyB)
-                    return this.noteSortAsc ? 1 : -1
-                return 0
-            })
-        },
-        submitNote() {
-            if(!this.noteInputText) return
-            const body = {
-                text: this.noteInputText,
-                status: '',
-                userId: 1
-            }
-            const headers = {
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-            }
-            fetch('/api/notes', {
-                method: "POST",
-                headers,
-                body: JSON.stringify(body)
-            })
-                .then(res => res.json())
-                .then(() => {
-                    this.fetchNotes()
-                    this.noteInputText = ''
-                })
-                .catch(err => console.log(err))
         },
         markNoteComplete(noteId, completeStatus) {
             const body = {
@@ -222,9 +201,9 @@ export default {
                 <input id="noteFilterTagsField" v-model="noteFilterTag">
             </div>
             <div class="col text-end">
-                <label for="noteInputField">New: </label>
-                <textarea id="noteInputField" v-model="noteInputText"></textarea>
-                <button @click="submitNote">Submit</button>
+                <button type="button" data-bs-toggle="modal" data-bs-target="#createModal">
+                    New Note(s)
+                </button>
             </div>
         </div>
 
@@ -271,6 +250,10 @@ export default {
             </tbody>
         </table>
     </div>
+
+    <CreateModal
+        @refresh="refreshData"
+    />
 
     <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog">
