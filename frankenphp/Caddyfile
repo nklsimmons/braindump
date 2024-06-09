@@ -1,6 +1,8 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
 
+	http_port {$HTTP_PORT:8080}
+
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
 	}
@@ -14,6 +16,8 @@
 {$CADDY_EXTRA_CONFIG}
 
 {$SERVER_NAME:localhost} {
+	reverse_proxy {$SERVER_NAME:localhost}:{$HTTP_PORT:8080}
+
 	log {
 		# Redact the authorization query parameter that can be set by Mercure
 		format filter {
